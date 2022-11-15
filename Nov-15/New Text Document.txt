@@ -1,0 +1,345 @@
+package com.ideas2it.Servlet;
+
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.List;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import com.ideas2it.model.Applicant;
+import com.ideas2it.model.ApplicantDTO;
+import com.ideas2it.model.Recruiter;
+import com.ideas2it.service.ApplicantService;
+import com.ideas2it.service.RecruiterService;
+import com.ideas2it.service.impl.ApplicantServiceImpl;
+import com.ideas2it.service.impl.RecruiterServiceImpl;
+import com.ideas2it.util.Constants;
+import com.ideas2it.util.DateUtil;
+import com.ideas2it.util.enumeration.Qualification;
+import com.ideas2it.util.exception.HireWorldException;
+import com.ideas2it.util.logger.HireWorldLogger;
+
+/**
+ * Servlet implementation class Applicant
+ */
+@WebServlet(urlPatterns = { "/createApplicant", "/displayApplicants", "/getApplicant", 
+        "/updateApplicant","/removeApplicant", "/getAssignedApplicants"})
+
+public class ApplicantServlet extends HttpServlet {
+	
+	ApplicantService applicantService = new ApplicantServiceImpl ();
+	
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		String action = request.getServletPath();
+		switch (action) {
+		case "/createApplicant":
+			createApplicant(request, response);
+			break;
+		case "/displayApplicants":
+			displayApplicants(request, response);
+			break;
+		case "/getApplicant":
+			getApplicant(request, response);
+			break;	
+		case "/updateApplicant":
+			updateApplicant(request, response);
+			break;
+		case "/removeApplicant":
+			removeApplicant(request, response);
+			break;	
+		case "/getAssignedApplicants":
+			getApplicantsByRecruiterId(request, response);
+			break;		
+	}
+	
+	protected void doGet(HttpServletRequest request, HttpServletResponse response)
+			throws ServletException, IOException {
+		String action = request.getServletPath();
+		switch (action) {
+		case "/createApplicant":
+			createApplicant(request, response);
+			break;
+		case "/displayApplicants":
+			displayApplicants(request, response);
+			break;
+		case "/getApplicant":
+			getApplicant(request, response);
+			break;	
+		case "/updateApplicant":
+			updateApplicant(request, response);
+			break;
+		case "/removeApplicant":
+			removeApplicant(request, response);
+			break;	
+		case "/getAssignedApplicants":
+			getApplicantsByRecruiterId(request, response);
+			break;
+		
+		}		
+	}
+	
+	private void createApplicant(HttpServletRequest request, HttpServletResponse response) throws ParseException, IOException, ServletException, HireWorldException {
+        try {
+        	
+        	String name = request.getParameter("name");
+            String email = request.getParameter("emailAddress");
+            Long mobile = Long.parseLong(request.getParameter("mobileNumber"));
+            String qualification = request.getParameter("qualification");
+            String gender = request.getParameter("gender");
+            Date dateOfBirth = DateUtil.getParsedDateOfBirth(request.getParameter("dateOfBirth"));
+            RequestDispatcher requestDispatcher;
+
+            ApplicantDTO applicantDTO = new ApplicantDTO();
+
+            applicantDTO.setApplicantName(name);
+            applicantDTO.setApplicantMobileNumber(mobileNumber);
+            applicantDTO.setApplicantEmailAddress(emailAddress);
+            applicantDTO.setApplicantDateOfBirth(dateOfBirth);
+            applicantDTO.setApplicantQualification(qualification);
+            ApplicantDTO createdApplicant = applicantService.createApplicant(applicantDTO);
+
+            if (0 != createdApplicant.getId()) {
+                request.setAttribute("message", "Applicant Created Sucessfully" + name);
+            } else {
+                request.setAttribute("message","Applicant Created Sucessfully" );
+            } 
+            requestDispatcher = request.getRequestDispatcher("displayApplicant.jsp");
+            requestDispatcher.include(request, response);
+        } catch (HireWorldException hireWorldException) {
+        	HireWorldExceptionLogger.displayError(hireWorldException.getMessage());
+		}
+	}
+	
+	/**
+	 * <p>
+	 * To display all the Applicants stored in the Applicants table. if the applicants
+	 * table is empty, display no record found.
+	 * </p>
+	 */
+	private void displayApplicants(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		try {
+			List<Applicant> applicants = applicantService.getApplicants();
+			HttpSession session = request.getSession();
+			if (!applicants.isEmpty()) {
+				session.setAttribute("Applicants", applicants);
+			} else {
+				session.setAttribute("Applicants", "No Record Found");
+			}
+			response.sendRedirect("displayApplicants.jsp");
+		} catch (HireWorldException  hireWorldExceptionException) {
+			HireWorldLogger.displayError(hireWorldException.getMessage());
+		}
+	}
+	
+	/**
+     * Gets the Applicant form database using Applicant id
+     *
+     * @param request
+     * @param response
+     * @throws IOException
+     * @throws ServletException
+     * @throws HireWorldException
+     */
+    public void getApplicant(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException, HireWorldException {
+        try {
+        	int applicantId = Integer.parseInt(request.getParameter("applicantId"));
+            ApplicantDTO applicantDTO = applicantService.getApplicantById(applicantId);
+            RequestDispatcher requestDispatcher;
+
+            if (applicantDTO != null) {
+                request.setAttribute("applicantDTO", applicantDTO);
+                requestDispatcher = request.getRequestDispatcher("getApplicant.jsp");
+                requestDispatcher.forward(request, response);
+            } else {
+                request.setAttribute("message", No Applicant Found in Given ID);
+                requestDispatcher = request.getRequestDispatcher("getApplicant.jsp");
+                requestDispatcher.include(request, response);
+            }
+        } catch (HireWorldException  hireWorldExceptionException) {
+			HireWorldLogger.displayError(hireWorldException.getMessage());
+		}
+    }
+    
+    /**
+     * Update the applicant details form database based on the request
+     *
+     * @param request
+     * @param response
+     * @throws IOException
+     * @throws ParseException
+     * @throws ServletException
+     * @throws HireWorldException
+     */
+    private void updateCandidate(HttpServletRequest request, HttpServletResponse response) throws IOException, ParseException, ServletException, HireWorldException {
+    	try {
+    		String name = request.getParameter("name");
+            String email = request.getParameter("emailAddress");
+            Long mobile = Long.parseLong(request.getParameter("mobileNumber"));
+            String qualification = request.getParameter("qualification");
+            String gender = request.getParameter("gender");
+            Date dateOfBirth = DateUtil.getParsedDateOfBirth(request.getParameter("dateOfBirth"));
+
+            int applicantId = Integer.parseInt(request.getParameter("applicantId"));
+            ApplicantDTO applicantDTO = applicantService.getApplicantById(applicantId);
+
+            ApplicantDTO applicantDTO = new ApplicantDTO();       
+
+            applicantDTO.setApplicantName(name);
+            applicantDTO.setApplicantMobileNumber(mobileNumber);
+            applicantDTO.setApplicantEmailAddress(emailAddress);
+            applicantDTO.setApplicantDateOfBirth(dateOfBirth);
+            applicantDTO.setApplicantQualification(qualification);
+
+            if (applicantService.updateApplicant(applicantDTO)) {
+                request.setAttribute("message", "applicant Successfully updated...");
+                RequestDispatcher requestDispatcher = request.getRequestDispatcher("success.jsp");
+                requestDispatcher.forward(request, response);
+            } else {
+                request.setAttribute("message", "applicant not updated...");
+                RequestDispatcher requestDispatcher = request.getRequestDispatcher("error.jsp");
+                requestDispatcher.forward(request, response);
+            }
+    	} catch (HireWorldException  hireWorldExceptionException) {
+			HireWorldLogger.displayError(hireWorldException.getMessage());
+		}
+    }
+    
+    /**
+     * Delete the Applicant form database based on the requested applicant id
+     *
+     * @param request
+     * @param response
+     * @throws IOException
+     * @throws ServletException
+     * @throws HireWorldException
+     */	
+    private void removeApplicant(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException, HireWorldException {          
+
+        int applicantId = Integer.parseInt(request.getParameter("applicantId"));
+        ApplicantDTO applicantDTO = applicantService.getApplicantById(applicantId);
+
+        try {
+          	if (null != applicantDTO) {
+          	boolean isDeleted = applicantService.removeApplicantById(applicantId));                	
+                	
+               	if (isDeleted) {
+               		request.setAttribute("message", "Applicant Deleted Sucessfully");
+                    RequestDispatcher requestDispatcher = request.getRequestDispatcher("deleteApplicant.jsp");
+                    requestDispatcher.forward(request, response);	                		
+               	} else {
+                    request.setAttribute("message", "Failed to Delete Applicant " + name);
+                    RequestDispatcher requestDispatcher = request.getRequestDispatcher("deleteApplicant.jsp");
+                    requestDispatcher.forward(request, response);
+                }
+            } else {
+                request.setAttribute("message", "No Applicants Found");
+                RequestDispatcher requestDispatcher = request.getRequestDispatcher("deleteApplicant.jsp");
+                requestDispatcher.forward(request, response);
+            }
+        } catch (HireWorldException hireWorldException) {
+        	HireWorldExceptionLogger.displayError(hireWorldException.getMessage());
+		}
+    }
+    
+    private void getApplicantsByRecruiterId (HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException, HireWorldException {          
+    	int applicantId = Integer.parseInt(request.getParameter("applicantId"));
+        ApplicantDTO applicantDTO = applicantService.getApplicantById(applicantId);
+            RequestDispatcher requestDispatcher;
+
+          	try {
+          		if (null != applicantDTO) {
+          	
+                    request.setAttribute("applicantDTO", applicantDTO);
+                    requestDispatcher = request.getRequestDispatcher("assignApplicants.jsp");
+                    requestDispatcher.forward(request, response);
+                } else {
+                    request.setAttribute("message", "Applicants Not found");
+                    requestDispatcher = request.getRequestDispatcher("assignApplicants.jsp");
+                    requestDispatcher.forward(request, response);
+                }
+          	} catch (HireWorldException hireWorldException) {
+            	HireWorldExceptionLogger.displayError(hireWorldException.getMessage());
+    		}
+        }
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	/**
+	 * <p>
+	 * To assign the Applicant for Recruiter.
+	 * </p>
+	
+	private void assignRecruiter(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		try {
+			HttpSession session = request.getSession();
+			int applicantId = Integer.parseInt(request.getParameter("id"));
+			boolean isPresent = ApplicantService.isIdExist(applicantId);
+			session.setAttribute("applicantId", applicantId);
+			if (isPresent) {
+				session.setAttribute("isPresent", isPresent);
+				response.sendRedirect("assignRecruiter.jsp");
+			}
+		} catch (HireWorldException  hireWorldExceptionException) {
+			HireWorldLogger.displayError(hireWorldException.getMessage());
+		}
+	}  */
+
+}
