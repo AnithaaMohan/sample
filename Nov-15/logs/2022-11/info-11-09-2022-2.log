@@ -1,0 +1,2 @@
+11-09-2022 23:01:16.974 INFO  org.hibernate.engine.transaction.jta.platform.internal.JtaPlatformInitiator initiateService- HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+11-09-2022 23:02:20.741 INFO  com.ideas2it.logger.HireWorldLogger displayInfo- Rajini Applicant Inserted 

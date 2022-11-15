@@ -1,0 +1,3 @@
+11-15-2022 10:55:43.420 INFO  com.ideas2it.logger.HireWorldLogger displayInfo- Displaying all the Recruiters
+11-15-2022 10:55:53.189 INFO  org.hibernate.Version logVersion- HHH000412: Hibernate ORM core version 5.6.12.Final
+11-15-2022 10:55:53.676 INFO  org.hibernate.annotations.common.reflection.java.JavaReflectionManager <clinit>- HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
